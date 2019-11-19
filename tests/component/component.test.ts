@@ -975,6 +975,34 @@ describe("destroy method", () => {
     await nextTick();
     expect(fixture.innerHTML).toBe("<div><span><span>12</span><button>click</button></span></div>");
   });
+
+  test.only("destroying a widget before being mounted (2)", async () => {
+    const steps: string[] = [];
+    class Child extends Component<any, any> {
+      static template = xml`<span></span>`;
+      willStart() {
+        steps.push('willStart');
+        return makeDeferred();
+      }
+      __destroy(parent) {
+        steps.push('__destroy');
+        super.__destroy(parent);
+      }
+    }
+    class Parent extends Component<any, any> {
+      static template = xml`<div><Child t-if="state.flag"/></div>`;
+      static components = { Child };
+      state = useState({ flag: true });
+    }
+
+    const parent = new Parent();
+    const prom = parent.mount(fixture);
+    await nextTick();
+    parent.state.flag = false;
+    await prom;
+    expect(fixture.innerHTML).toBe("<div></div>");
+    expect(steps).toEqual(['willStart', '__destroy'])
+  });
 });
 
 describe("composition", () => {

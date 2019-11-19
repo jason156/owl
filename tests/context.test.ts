@@ -255,6 +255,39 @@ describe("Context", () => {
     expect(testContext.subscriptions.update.length).toBe(0);
   });
 
+  test.only("destroyed component before being mounted is inactive", async () => {
+    const testContext = new Context({ a: 123 });
+
+    class Child extends Component<any, any> {
+      static template = xml`<span><t t-esc="contextObj.a"/></span>`;
+      contextObj = useContext(testContext);
+      willStart() {
+        console.log('willStart');
+        return makeDeferred();
+      }
+      destroy() {
+        console.warn('DESTROY');
+      }
+    }
+    class Parent extends Component<any, any> {
+      static template = xml`<div t-debug="1"><Child t-if="state.flag"/></div>`;
+      static components = { Child };
+      state = useState({ flag: true });
+    }
+
+    const parent = new Parent();
+    const prom = parent.mount(fixture);
+    await nextTick();
+    expect(testContext.subscriptions.update.length).toBe(1);
+    parent.state.flag = false;
+    await prom;
+    expect(fixture.innerHTML).toBe("<div></div>");
+    // kind of whitebox...
+    // we make sure we do not have any pending subscriptions to the 'update'
+    // event
+    expect(testContext.subscriptions.update.length).toBe(0);
+  });
+
   test("concurrent renderings", async () => {
     const testContext = new Context({ x: { n: 1 }, key: "x" });
     const def = makeDeferred();

@@ -317,13 +317,16 @@ export class Component<T extends Env, Props extends {}> {
    */
   async render(force: boolean = false): Promise<void> {
     const __owl__ = this.__owl__;
+    console.warn('render');
     if (!__owl__.isMounted && !__owl__.currentFiber) {
       // if we get here, this means that the component was either never mounted,
       // or was unmounted and some state change  triggered a render. Either way,
       // we do not want to actually render anything in this case.
+      console.warn('skip');
       return;
     }
     if (__owl__.currentFiber && !__owl__.currentFiber.isRendered) {
+      console.warn('skip 2');
       return scheduler.addFiber(__owl__.currentFiber.root);
     }
     // if we aren't mounted at this point, it implies that there is a
